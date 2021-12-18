@@ -8,6 +8,10 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 
+mod login;
+
+use crate::login::{login_form, login_post};
+
 #[tokio::main]
 async fn main() {
     // initialize tracing
@@ -19,7 +23,7 @@ async fn main() {
         .route("/", get(root))
         // `POST /users` goes to `create_user`
         .route("/users", post(create_user))
-        .route("/login", get(login))
+        .route("/login", get(login_form).post(login_post))
         .route("/logout", get(logout));
 
     // layers (includes our cookie library)
@@ -52,15 +56,6 @@ async fn root(c: Cookies) -> impl IntoResponse {
     } else {
         (StatusCode::OK, Html("<code>Hello World.</code>"))
     }
-}
-
-async fn login() -> impl IntoResponse {
-    let cookie = "kagi_auth_98b3=true; SameSite=Lax; Path=/";
-    let mut headers = HeaderMap::new();
-
-    headers.insert(SET_COOKIE, cookie.parse().unwrap());
-
-    (headers, Html("<code>you have been logged in.</code><script>let r = () =>window.location = \"/\"\nsetTimeout(r, \"500\")</script>"))
 }
 
 async fn logout(c: Cookies) -> impl IntoResponse {
